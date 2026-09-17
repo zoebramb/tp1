@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import com.example.demo.dto.FavoritoRequestDTO;
 import com.example.demo.dto.FavoritoResponseDTO;
 import com.example.demo.repository.FavoritoRepository;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import com.example.demo.model.Favorito;
 
 /*El servicio va a conectar los DTO con el Repositorio
@@ -63,6 +66,27 @@ public class FavoritoService {
     public Optional<FavoritoResponseDTO> buscarPorID(Long id)
     {
         return favoritoRepository.buscarPorId(id).map(this::mapearADto);
+    }
+
+    public Optional<FavoritoResponseDTO> actualizar(Long id, FavoritoRequestDTO requestDTO)
+    {
+        //buscamos el favorito original en la base de datos
+        Optional<Favorito> favoritoExistente = favoritoRepository.buscarPorId(id);
+
+        if(favoritoExistente.isPresent())
+        {
+            Favorito favorito = favoritoExistente.get();
+            //actualizamos los datos para guardarlo
+            favorito.setProductoId(requestDTO.getProductoId());
+            favorito.setNotaPersonal(requestDTO.getNotaPersonal());
+
+            favoritoRepository.guardar(favorito);
+
+            //lo tengo que devolver en DTO
+            return Optional.of(mapearADto(favorito));
+        }
+        
+        return Optional.empty();
     }
 
     public void eliminarPorId(Long id)
