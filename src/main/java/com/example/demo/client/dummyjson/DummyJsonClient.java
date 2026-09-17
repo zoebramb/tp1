@@ -7,7 +7,8 @@ import org.springframework.web.client.RestClient;
 //Su trabajo es hacer la peticion GET y lanzar la excepcion si el producto no existe
 
 @Component //para que spring lo guarde en su memoria y nos deje inyectarlo 
-public class DummyJsonClient {
+public class DummyJsonClient 
+{
 
     private final RestClient restClient;
 
