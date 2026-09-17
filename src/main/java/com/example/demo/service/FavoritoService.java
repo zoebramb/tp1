@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,7 @@ public class FavoritoService {
     Entidad Favorito en blanco, le transfiere los datos permitidos (el producto y la nota) y le inyecta 
     la información del sistema (como el LocalDateTime.now()).
      */
-    public FavoritoResposeDTO crearFavorito(FavoritoRequestDTO requestDTO) 
+    public FavoritoResponseDTO crearFavorito(FavoritoRequestDTO requestDTO) 
     {
         Favorito nuevoFavorito = new Favorito();
         
@@ -49,6 +51,25 @@ public class FavoritoService {
         return mapearADto(favoritoGuardado);
     }
 
+    public List<FavoritoResponseDTO> obtenerTodosLosFavoritos() 
+    {
+        List<Favorito> favoritos = favoritoRepository.buscarTodos();
+        //usamos un Stream para traducir cada uno a DTO
+        return favoritos.stream()
+                        .map(this::mapearADto)
+                        .toList();
+    }
+
+    public Optional<FavoritoResponseDTO> buscarPorID(Long id)
+    {
+        return favoritoRepository.buscarPorId(id).map(this::mapearADto);
+    }
+
+    public void eliminarPorId(Long id)
+    {
+        favoritoRepository.eliminarPorId(id);
+    }
+
 
     // --- MÉTODO AYUDANTE (PRIVADO) ---
     // Lo usamos para no repetir código de mapeo en todos lados
@@ -61,3 +82,8 @@ public class FavoritoService {
         return dto;
     }
 }
+
+/*
+Traducimos a Entidad porque el cliente manda información incompleta y necesitamos agregarle datos (como el ID y la fecha) antes de guardarlo.
+Traducmos a DTO a la vuelta para no exponer el modelo de base de datos crudo a internet; 
+entregamos un formato limpio, controlado y diseñado específicamente para la pantalla del usuario. */
