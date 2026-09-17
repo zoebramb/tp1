@@ -10,8 +10,6 @@ import com.example.demo.dto.FavoritoRequestDTO;
 import com.example.demo.dto.FavoritoResponseDTO;
 import com.example.demo.repository.FavoritoRepository;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-
 import com.example.demo.model.Favorito;
 
 /*El servicio va a conectar los DTO con el Repositorio

@@ -7,6 +7,8 @@ import com.example.demo.dto.FavoritoRequestDTO;
 import com.example.demo.dto.FavoritoResponseDTO;
 import com.example.demo.service.FavoritoService;
 
+import jakarta.validation.Valid;  //Le tengo que decir al controlador cuando quiero que verifique segun las anotaciones que tengo en el request DTO
+
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController 
 @RequestMapping("/api/favoritos")
-/* El trabajo del controlador es escichar las peticiones de internet
+/* El trabajo del controlador es escuchar las peticiones de internet
     pasarle los datos al servicio y devolver las respuestas con el codigo http correcto
  */
 public class FavoritoController 
@@ -38,7 +40,7 @@ public class FavoritoController
     //ahora los metodos http
     @PostMapping    //si no le pongo un path hago que cuando escuche la ruta gral y si es un petodo post viene x acá
     //ResponseEntity representa la respuesta HTTP completa y permite tener control total sobre lo que sale del servidor. Está compuesta por tres partes: body, status code, headers
-    public ResponseEntity<FavoritoResponseDTO> crear(@RequestBody FavoritoRequestDTO requestDTO)
+    public ResponseEntity<FavoritoResponseDTO> crear(@Valid @RequestBody FavoritoRequestDTO requestDTO)
     {
         FavoritoResponseDTO creado = favoritoService.crearFavorito(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
@@ -64,7 +66,7 @@ public class FavoritoController
     }
 
     @PostMapping("/{id}")
-    public ResponseEntity<FavoritoResponseDTO> actualizar(@PathVariable Long id, @RequestBody FavoritoRequestDTO request)
+    public ResponseEntity<FavoritoResponseDTO> actualizar(@PathVariable Long id, @Valid @RequestBody FavoritoRequestDTO request)
     {
         Optional<FavoritoResponseDTO> actualizado = favoritoService.actualizar(id, request);
 
