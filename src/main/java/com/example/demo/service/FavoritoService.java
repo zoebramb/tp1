@@ -6,8 +6,10 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.client.dummyjson.DummyJsonClient;
 import com.example.demo.dto.FavoritoRequestDTO;
 import com.example.demo.dto.FavoritoResponseDTO;
+import com.example.demo.exception.RecursoNoEncontradoException;
 import com.example.demo.repository.FavoritoRepository;
 
 import com.example.demo.model.Favorito;
@@ -19,15 +21,17 @@ import com.example.demo.model.Favorito;
 public class FavoritoService {
 
     private final FavoritoRepository favoritoRepository;
+    private final DummyJsonClient dummyJsonClient;
 
     /*Spring inyecta automáticamente el repositorio aca.
     Esto es inyección de dependencias, y es una de las cosas que hace Spring para que no
     tengamos que crear instancias de las clases manualmente.
     Se lo exige a Spring a través de los parámetros del constructor.
     */
-    public FavoritoService(FavoritoRepository favoritoRepository) 
+    public FavoritoService(FavoritoRepository favoritoRepository, DummyJsonClient dummyJsonClient) 
     {
         this.favoritoRepository = favoritoRepository;
+        this.dummyJsonClient = dummyJsonClient;
     }
 
     //ahora los métodos CRUD
@@ -38,6 +42,12 @@ public class FavoritoService {
      */
     public FavoritoResponseDTO crearFavorito(FavoritoRequestDTO requestDTO) 
     {
+        boolean existe = dummyJsonClient.existeProducto(requestDTO.getProductoId());
+        
+        if (!existe) {
+            throw new RecursoNoEncontradoException("El producto con ID " + requestDTO.getProductoId() + " no existe en DummyJSON");
+        }
+
         Favorito nuevoFavorito = new Favorito();
         
         // Transferir datos del DTO a la entidad
@@ -68,6 +78,13 @@ public class FavoritoService {
 
     public Optional<FavoritoResponseDTO> actualizar(Long id, FavoritoRequestDTO requestDTO)
     {
+
+        boolean existe = dummyJsonClient.existeProducto(requestDTO.getProductoId());
+        
+        if (!existe) {
+            throw new RecursoNoEncontradoException("El producto con ID " + requestDTO.getProductoId() + " no existe en DummyJSON");
+        }
+
         //buscamos el favorito original en la base de datos
         Optional<Favorito> favoritoExistente = favoritoRepository.buscarPorId(id);
 
