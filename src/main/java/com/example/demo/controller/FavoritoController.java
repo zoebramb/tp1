@@ -3,18 +3,20 @@ package com.example.demo.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.FavoritoRequestDTO;
-import com.example.demo.dto.FavoritoResponseDTO;
+import com.example.demo.dto.FavoritoRequest;
+import com.example.demo.dto.FavoritoResponse;
 import com.example.demo.service.FavoritoService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;  //Le tengo que decir al controlador cuando quiero que verifique segun las anotaciones que tengo en el request DTO
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,67 +24,54 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 
-@RestController 
-@RequestMapping("/api/favoritos")
 /* El trabajo del controlador es escuchar las peticiones de internet
     pasarle los datos al servicio y devolver las respuestas con el codigo http correcto
  */
+@RestController 
+@RequestMapping("/api/favoritos")
+@Tag(name = "favoritos", description = "CRUD en memoria")
+    
 public class FavoritoController 
 {
-    private final FavoritoService favoritoService;
+    private final FavoritoService service;
 
-    //declaro en el contructor el servicio que voy a utilizar
-    public FavoritoController(FavoritoService favoritoService)
-    {
-        this.favoritoService = favoritoService;
+    public FavoritoController(FavoritoService service) {
+        this.service = service;
     }
 
-    //ahora los metodos http
-    @PostMapping    //si no le pongo un path hago que cuando escuche la ruta gral y si es un petodo post viene x acá
-    //ResponseEntity representa la respuesta HTTP completa y permite tener control total sobre lo que sale del servidor. Está compuesta por tres partes: body, status code, headers
-    public ResponseEntity<FavoritoResponseDTO> crear(@Valid @RequestBody FavoritoRequestDTO requestDTO)
-    {
-        FavoritoResponseDTO creado = favoritoService.crearFavorito(requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
-    }
-
+    @Operation(summary = "Listar favoritos")
     @GetMapping
-    public ResponseEntity<List<FavoritoResponseDTO>> listarTodos()
-    {
-        List<FavoritoResponseDTO> lista = favoritoService.obtenerTodosLosFavoritos();
-        return ResponseEntity.ok(lista);
+    public ResponseEntity<List<FavoritoResponse>> listar() {
+        return ResponseEntity.ok(service.obtenerTodos());
     }
 
-    @GetMapping("/{id}")                             // uso path variable ya que el id viene en la url
-    public ResponseEntity<FavoritoResponseDTO> obtener(@PathVariable Long id) 
-    {       
-        Optional<FavoritoResponseDTO> favorito = favoritoService.buscarPorID(id);
-
-        if (favorito.isPresent()) {
-            return ResponseEntity.ok(favorito.get()); // 200 OK con el DTO adentro
-        } else {
-            return ResponseEntity.notFound().build(); // 404 Not Found
-        }
+    @Operation(summary = "Obtener un favorito por ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<FavoritoResponse> obtenerUno(@PathVariable Long id) {
+        return ResponseEntity.ok(service.obtenerPorId(id));
     }
 
-    @PostMapping("/{id}")
-    public ResponseEntity<FavoritoResponseDTO> actualizar(@PathVariable Long id, @Valid @RequestBody FavoritoRequestDTO request)
-    {
-        Optional<FavoritoResponseDTO> actualizado = favoritoService.actualizar(id, request);
-
-        if(actualizado.isPresent())
-        {
-            return ResponseEntity.ok(actualizado.get());
-        } else
-            {
-                return ResponseEntity.notFound().build();
-            }
+    @Operation(summary = "Crear un favorito")
+    @PostMapping
+    public ResponseEntity<FavoritoResponse> crear(@Valid @RequestBody FavoritoRequest request) {
+        FavoritoResponse creado = service.crear(request);
+        return ResponseEntity
+            .created(URI.create("/api/favoritos/" + creado.id()))
+            .body(creado);
     }
 
+    @Operation(summary = "Actualizar un favorito")
+    @PutMapping("/{id}")
+    public ResponseEntity<FavoritoResponse> actualizar(
+            @PathVariable Long id, 
+            @Valid @RequestBody FavoritoRequest request) {
+        return ResponseEntity.ok(service.actualizar(id, request));
+    }
+
+    @Operation(summary = "Eliminar un favorito")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id)
-    {
-        favoritoService.eliminarPorId(id);
-        return ResponseEntity.noContent().build(); //no content genera el codigo 204
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        service.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

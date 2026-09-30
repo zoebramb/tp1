@@ -1,37 +1,35 @@
 package com.example.demo.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
+import com.example.demo.dto.FavoritoRequest;
+import com.example.demo.dto.FavoritoResponse;
+import com.example.demo.exception.RecursoNoEncontradoException;
+import com.example.demo.model.Favorito;
+import com.example.demo.repository.FavoritoRepository;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.client.dummyjson.DummyJsonClient;
-import com.example.demo.dto.FavoritoRequestDTO;
-import com.example.demo.dto.FavoritoResponseDTO;
-import com.example.demo.exception.RecursoNoEncontradoException;
-import com.example.demo.repository.FavoritoRepository;
-
-import com.example.demo.model.Favorito;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /*El servicio va a conectar los DTO con el Repositorio
     Es en donde voy a tener mi lógica de negocio
 */
-@Service 
+@Service
 public class FavoritoService {
-
-    private final FavoritoRepository favoritoRepository;
-    private final DummyJsonClient dummyJsonClient;
+    private final FavoritoRepository repository;
 
     /*Spring inyecta automáticamente el repositorio aca.
     Esto es inyección de dependencias, y es una de las cosas que hace Spring para que no
     tengamos que crear instancias de las clases manualmente.
     Se lo exige a Spring a través de los parámetros del constructor.
     */
-    public FavoritoService(FavoritoRepository favoritoRepository, DummyJsonClient dummyJsonClient) 
-    {
-        this.favoritoRepository = favoritoRepository;
-        this.dummyJsonClient = dummyJsonClient;
+
+    public FavoritoService(FavoritoRepository repository) {
+        this.repository = repository;
+    }
+
+    private Favorito buscar0Fallar(Long id) {
+        return repository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe el favorito con id " + id));
     }
 
     //ahora los métodos CRUD
@@ -40,87 +38,40 @@ public class FavoritoService {
     Entidad Favorito en blanco, le transfiere los datos permitidos (el producto y la nota) y le inyecta 
     la información del sistema (como el LocalDateTime.now()).
      */
-    public FavoritoResponseDTO crearFavorito(FavoritoRequestDTO requestDTO) 
-    {
-        boolean existe = dummyJsonClient.existeProducto(requestDTO.getProductoId());
-        
-        if (!existe) {
-            throw new RecursoNoEncontradoException("El producto con ID " + requestDTO.getProductoId() + " no existe en DummyJSON");
-        }
-
-        Favorito nuevoFavorito = new Favorito();
-        
-        // Transferir datos del DTO a la entidad
-        nuevoFavorito.setProductoId(requestDTO.getProductoId());
-        nuevoFavorito.setNotaPersonal(requestDTO.getNotaPersonal());
-        nuevoFavorito.setFechaCreacion(LocalDateTime.now());
-
-        //guardar 
-        Favorito favoritoGuardado = favoritoRepository.guardar(nuevoFavorito);
-
-        //devolver la entidad traducida a DTO
-        return mapearADto(favoritoGuardado);
+private FavoritoResponse aResponse(Favorito f) {
+        return new FavoritoResponse(f.id(), f.productoId(), f.nota(), f.fechaAgregado());
     }
 
-    public List<FavoritoResponseDTO> obtenerTodosLosFavoritos() 
-    {
-        List<Favorito> favoritos = favoritoRepository.buscarTodos();
-        //usamos un Stream para traducir cada uno a DTO
-        return favoritos.stream()
-                        .map(this::mapearADto)
-                        .toList();
+    public FavoritoResponse crear(FavoritoRequest request) {
+        Favorito nuevo = new Favorito(null, request.productoId(), request.nota(), LocalDateTime.now());
+        return aResponse(repository.save(nuevo));
     }
 
-    public Optional<FavoritoResponseDTO> buscarPorID(Long id)
-    {
-        return favoritoRepository.buscarPorId(id).map(this::mapearADto);
+    public List<FavoritoResponse> obtenerTodos() {
+        return repository.findAll().stream().map(this::aResponse).toList();
     }
 
-    public Optional<FavoritoResponseDTO> actualizar(Long id, FavoritoRequestDTO requestDTO)
-    {
-
-        boolean existe = dummyJsonClient.existeProducto(requestDTO.getProductoId());
-        
-        if (!existe) {
-            throw new RecursoNoEncontradoException("El producto con ID " + requestDTO.getProductoId() + " no existe en DummyJSON");
-        }
-
-        //buscamos el favorito original en la base de datos
-        Optional<Favorito> favoritoExistente = favoritoRepository.buscarPorId(id);
-
-        if(favoritoExistente.isPresent())
-        {
-            Favorito favorito = favoritoExistente.get();
-            //actualizamos los datos para guardarlo
-            favorito.setProductoId(requestDTO.getProductoId());
-            favorito.setNotaPersonal(requestDTO.getNotaPersonal());
-
-            favoritoRepository.guardar(favorito);
-
-            //lo tengo que devolver en DTO
-            return Optional.of(mapearADto(favorito));
-        }
-        
-        return Optional.empty();
+    public FavoritoResponse obtenerPorId(Long id) {
+        return aResponse(buscar0Fallar(id));
     }
 
-    public void eliminarPorId(Long id)
-    {
-        favoritoRepository.eliminarPorId(id);
+    public FavoritoResponse actualizar(Long id, FavoritoRequest request) {
+        Favorito existente = buscar0Fallar(id);
+        Favorito actualizado = new Favorito(
+            existente.id(),
+            request.productoId(),
+            request.nota(),
+            existente.fechaAgregado() // no se pisa
+        );
+        return aResponse(repository.save(actualizado));
     }
 
-
-    // --- MÉTODO AYUDANTE (PRIVADO) ---
-    // Lo usamos para no repetir código de mapeo en todos lados
-    private FavoritoResponseDTO mapearADto(Favorito favorito) {
-        FavoritoResponseDTO dto = new FavoritoResponseDTO();
-        dto.setId(favorito.getId());
-        dto.setProductoId(favorito.getProductoId());
-        dto.setNotaPersonal(favorito.getNotaPersonal());
-        dto.setFechaCreacion(favorito.getFechaCreacion());
-        return dto;
+    public void eliminar(Long id) {
+        buscar0Fallar(id); // Evalúa si existe antes de borrar
+        repository.deleteById(id);
     }
 }
+
 
 /*
 Traducimos a Entidad porque el cliente manda información incompleta y necesitamos agregarle datos (como el ID y la fecha) antes de guardarlo.
