@@ -1,21 +1,20 @@
-# API de Favoritos - Trabajo Práctico 1
+# TP2: Persistencia, Migraciones y Arquitectura Hexagonal
 
-Esta es una API RESTful desarrollada con Spring Boot para la gestión de Favoritos. El proyecto implementa una arquitectura por capas (Controller, Service, Repository), validación de datos de entrada y consume la API externa de DummyJSON para verificar la existencia de los productos antes de guardarlos.
+## Levantar la Base de Datos y Migraciones
+1. Asegurate de tener Docker Desktop abierto y ejecutándose.
+2. Abrí una terminal en la raíz de este proyecto y ejecutá: `docker compose up -d`.
+3. Esto levantará un contenedor de PostgreSQL en el puerto 5432 con la base de datos `webii_tp2`.
+4. Al arrancar la aplicación de Spring Boot, **Flyway** se encarga automáticamente de correr las migraciones (archivos `.sql` en `db/migration`) para crear y versionar las tablas.
 
-## Instrucciones para levantar el proyecto
+## Arquitectura Hexagonal (Punto 4)
+Al migrar de memoria (Map) a PostgreSQL (JPA), **no fue necesario modificar el Dominio, el Service ni el Controller**.
+* **Qué cambió:** Eliminamos `InMemoryFavoritoRepository` y creamo la interfaz `FavoritoJpaRepository`, la entidad `FavoritoEntity` y el adaptador `FavoritoRepositoryAdapter`.
+* **Por qué fue posible:** Porque `FavoritoRepository` funciona como un **puerto** (un contrato). Tanto la versión en memoria antigua como el nuevo adaptador JPA son implementaciones (adapters) intercambiables que respetan ese contrato. El Service solo conoce el puerto, por lo que ignora los detalles de la infraestructura subyacente.
 
-1. Clonar este repositorio.
-2. Abrir el proyecto en tu IDE (como Visual Studio Code o IntelliJ).
-3. Asegurarte de tener instalado Java 17 o superior.
-4. Ejecutar la clase principal `DemoApplication.java` (o correr el comando `./mvnw spring-boot:run` en la terminal).
-5. El servidor se iniciará en el puerto `8080`.
+## Evolución del Esquema (Punto 6)
+**¿Por qué usamos una migración nueva (V4) en lugar de modificar la V3?**
+Flyway calcula un checksum (hash) de cada migración aplicada y lo guarda en su historial. Si editáramos la migración `V3` ya aplicada, el checksum cambiaría y Flyway rechazaría el arranque para evitar que las bases de datos queden en estados divergentes. Por eso, cualquier cambio nuevo (como hacer que `lista_id` sea NOT NULL) debe hacerse siempre en un archivo de migración nuevo (`V4`).
 
-## Documentación (Swagger UI)
-
-La API está completamente documentada con OpenAPI. Una vez que el proyecto esté corriendo, podés explorar y probar todos los endpoints desde la interfaz gráfica de Swagger ingresando a:
-
-👉 **[http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)**
-
-## Evidencia de Pruebas
-
-En la carpeta `/evidencia` de este repositorio se encuentran las capturas de pantalla o colecciones que demuestran el correcto funcionamiento de los casos de éxito y de error para los recursos solicitados.
+## Transacciones y ACID (Punto 7)
+En la operación de "Mover Favoritos", se realizan varias escrituras: actualizar los favoritos y luego eliminar la lista de origen. 
+Utilizamos la anotación `@Transactional` para garantizar la **Atomicidad** (la "A" de ACID). Si sacáramos esta anotación y ocurriera un error (ej. pérdida de conexión) justo después de mover los favoritos pero antes de borrar la lista origen, la base de datos quedaría en un estado inconsistente (favoritos movidos, pero la lista origen seguiría existiendo vacía). `@Transactional` asegura que o se aplican todos los cambios, o no se aplica ninguno.
