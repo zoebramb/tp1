@@ -22,45 +22,46 @@ public class FavoritoEntity
     private LocalDateTime fechaAgregado;
 
 
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lista_id")
+    private ListaEntity lista;
+
     //Hibernate exige un contructor vacío
     public FavoritoEntity() {}
-
-
+    
     //Getters y setters
+
+    public ListaEntity getLista() { return lista; }
+    public void setLista(ListaEntity lista) { this.lista = lista; }
+
     public Long getId() {
         return id;
     }
-
 
     public void setId(Long id) {
         this.id = id;
     }
 
-
     public Long getProductoId() {
         return productoId;
     }
-
 
     public void setProductoId(Long productoId) {
         this.productoId = productoId;
     }
 
-
     public String getNota() {
         return nota;
     }
-
 
     public void setNota(String nota) {
         this.nota = nota;
     }
 
-
     public LocalDateTime getFechaAgregado() {
         return fechaAgregado;
     }
-
 
     public void setFechaAgregado(LocalDateTime fechaAgregado) {
         this.fechaAgregado = fechaAgregado;
