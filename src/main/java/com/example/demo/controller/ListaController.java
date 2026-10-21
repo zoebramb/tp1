@@ -17,7 +17,7 @@ import com.example.demo.model.Lista;
 import com.example.demo.service.ListaService;
 
 @RestController
-@RequestMapping("/listas")
+@RequestMapping({"/api/listas", "/listas"})
 public class ListaController {
 
     private final ListaService listaService;
