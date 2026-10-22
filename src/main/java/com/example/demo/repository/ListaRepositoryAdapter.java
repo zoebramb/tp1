@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 
 import com.example.demo.model.Lista;
 import com.example.demo.model.ListaEntity;
+import com.example.demo.model.UsuarioEntity;
 
-//esta clase se encarga de implementar la interfaz lisra repo y traduce los Lista (record) a lista entity(jpa)
-
+// Esta clase se encarga de implementar la interfaz ListaRepository y traduce los Lista (record) a ListaEntity (jpa)
 @Component 
 public class ListaRepositoryAdapter implements ListaRepository {
 
@@ -24,6 +24,12 @@ public class ListaRepositoryAdapter implements ListaRepository {
         ListaEntity entity = new ListaEntity();
         entity.setId(lista.id());
         entity.setNombre(lista.nombre());
+
+        if (lista.usuarioId() != null) {
+            UsuarioEntity usuarioEntity = new UsuarioEntity();
+            usuarioEntity.setId(lista.usuarioId());
+            entity.setUsuario(usuarioEntity);
+        }
 
         ListaEntity guardada = jpaRepository.save(entity);
         return mapearADominio(guardada);
@@ -42,11 +48,19 @@ public class ListaRepositoryAdapter implements ListaRepository {
     }
 
     @Override
+    public List<Lista> findByUsuarioId(Long usuarioId) {
+        return jpaRepository.findByUsuarioId(usuarioId).stream()
+                .map(this::mapearADominio)
+                .toList();
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
 
     private Lista mapearADominio(ListaEntity entity) {
-        return new Lista(entity.getId(), entity.getNombre());
+        Long usuarioId = entity.getUsuario() != null ? entity.getUsuario().getId() : null;
+        return new Lista(entity.getId(), entity.getNombre(), usuarioId);
     }
 }
