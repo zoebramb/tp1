@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping({"/api/listas", "/listas"})
+@RequestMapping("/api/listas")
 @Tag(name = "Listas", description = "Endpoints para la gestión de listas de favoritos")
 public class ListaController {
 
