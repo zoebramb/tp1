@@ -60,3 +60,39 @@ Para ejecutarlas *(requiere tener Docker Desktop en ejecución)*:
 ```bash
 ./mvnw test
 ```
+
+## Integración Continua (CI) en GitHub Actions (Consigna 6 y 8.2)
+El repositorio cuenta con un pipeline automatizado en `.github/workflows/ci.yml`.
+* **Disparador:** Se ejecuta en cada `push` o `pull request` hacia cualquier rama.
+* **Flujo:** Levanta un entorno Ubuntu con Java 25, compila el código y ejecuta tanto las pruebas unitarias como las de integración (levantando Testcontainers y PostgreSQL).
+* **Cómo leer el resultado:**
+  * En la pestaña **Actions** de GitHub (o en el icono al lado de cada commit):
+    * Un tilde verde indica que el build y todos los tests pasaron exitosamente.
+    * Una cruz roja indica que hubo un fallo de compilación o que al menos un test unitario/integración falló. Al hacer clic se accede a la consola de ejecución con el log detallado del error.
+
+## Despliegue en Render (Consigna 7 y 8.2)
+
+### 1. Base de Datos PostgreSQL
+1. En el dashboard de **Render**, crear una nueva base de datos: `New +` ➜ `PostgreSQL`.
+2. Asignar un nombre (ej. `webii-db`) y seleccionar el plan gratuito.
+3. Copiar los datos de conexión que provee Render:
+   * **Host**, **Database**, **Username**, **Password**.
+   * O el string de conexión (reemplazando `postgres://` por `jdbc:postgresql://`).
+
+### 2. Web Service (Aplicación Spring Boot)
+1. En **Render**, crear un nuevo servicio web: `New +` ➜ `Web Service`.
+2. Conectar el repositorio de GitHub y seleccionar la rama correspondiente.
+3. Render detectará automáticamente el `Dockerfile` con Java 25.
+4. En la sección **Environment Variables**, configurar:
+   * `DB_URL`: `jdbc:postgresql://<host-de-render>:5432/<nombre-base>`
+   * `DB_USERNAME`: `<usuario-de-render>`
+   * `DB_PASSWORD`: `<password-de-render>`
+   * `JWT_SECRET`: una clave secreta segura de al menos 48 caracteres.
+5. Iniciar el despliegue (**Deploy**).
+6. Verificar en los logs que Flyway aplique las migraciones (`V1` a `V6`) y que la aplicación inicie en el puerto asignado.
+
+### 3. Verificación de la URL pública
+* `GET https://<tu-app>.onrender.com/health` ➜ debe responder `{"status":"ok","service":"demo"}` con `200 OK`.
+* `GET https://<tu-app>.onrender.com/api/listas` sin token ➜ responde `401 Unauthorized`.
+* `POST https://<tu-app>.onrender.com/api/auth/login` con credenciales válidas ➜ devuelve el token JWT.
+* `GET https://<tu-app>.onrender.com/api/listas` con header `Authorization: Bearer <token>` ➜ responde `200 OK`.

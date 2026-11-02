@@ -56,7 +56,7 @@ class ListaServiceImplTest {
         Lista guardada = listaCaptor.getValue();
 
         assertThat(guardada.usuarioId()).isEqualTo(usuarioId);
-        assertThat(guardada.nombre()).isEqualTo("Tu lista");
+        assertThat(guardada.nombre()).isEqualTo("Mi lista");
     }
 }
 
