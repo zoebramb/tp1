@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  */
 @RestController 
 @RequestMapping("/api/favoritos")
-@Tag(name = "favoritos", description = "CRUD en memoria")
+@Tag(name = "favoritos", description = "CRUD de favoritos (requiere autenticación JWT)")
     
 public class FavoritoController 
 {

@@ -43,7 +43,7 @@ private FavoritoResponse aResponse(Favorito f) {
     }
 
     public FavoritoResponse crear(FavoritoRequest request) {
-        Favorito nuevo = new Favorito(null, request.productoId(), request.nota(), LocalDateTime.now());
+        Favorito nuevo = new Favorito(null, request.productoId(), request.nota(), LocalDateTime.now(), request.listaId());
         return aResponse(repository.save(nuevo));
     }
 
@@ -61,7 +61,8 @@ private FavoritoResponse aResponse(Favorito f) {
             existente.id(),
             request.productoId(),
             request.nota(),
-            existente.fechaAgregado() // no se pisa
+            existente.fechaAgregado(), // no se pisa
+            request.listaId()
         );
         return aResponse(repository.save(actualizado));
     }

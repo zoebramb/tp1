@@ -12,4 +12,5 @@ public interface FavoritoRepository {
     Optional<Favorito> findById(Long id);
     Favorito save(Favorito favorito);
     void deleteById(Long id);
+    List<Favorito> findByListaId(Long listaId);
 }
